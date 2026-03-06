@@ -1,0 +1,35 @@
+[Unit]
+Description=MCS Matrix RX – mesh network + receiver control
+After=network-online.target multi-user.target systemd-modules-load.service
+Wants=network-online.target
+After=systemd-networkd-wait-online.service NetworkManager-wait-online.service
+
+[Service]
+Type=simple
+
+# --- Configuration (edit these) ---
+Environment=RX_BAT_IP=192.168.50.2/24
+Environment=BIND_IP=0.0.0.0
+Environment=CTRL_PORT=9999
+Environment=IPERF_PORT=5201
+Environment=MESH_SCRIPT=/opt/mcs-test/sdmah-mesh.sh
+Environment=RX_SCRIPT=/opt/mcs-test/rx_control.py
+
+# Step 1: Patch the BAT_IP in sdmah-mesh.sh and run it
+ExecStartPre=/bin/bash -c 'sed -i "s|^BAT_IP=.*|BAT_IP=\"${RX_BAT_IP}\"|" ${MESH_SCRIPT}'
+ExecStartPre=/bin/bash ${MESH_SCRIPT}
+
+# Step 2: Small settle delay for the mesh to form
+ExecStartPre=/bin/sleep 5
+
+# Step 3: Run the receiver control daemon
+ExecStart=/usr/bin/python3 ${RX_SCRIPT} ${BIND_IP} ${CTRL_PORT} ${IPERF_PORT}
+
+Restart=on-failure
+RestartSec=5
+WorkingDirectory=/opt/mcs-test
+StandardOutput=journal+console
+StandardError=journal+console
+
+[Install]
+WantedBy=multi-user.target
