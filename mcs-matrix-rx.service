@@ -15,7 +15,10 @@ Environment=IPERF_PORT=5201
 Environment=MESH_SCRIPT=/opt/mcs-test/sdmah-mesh.sh
 Environment=RX_SCRIPT=/opt/mcs-test/rx_control.py
 
-# Step 0: Load morse driver modules
+# Step 0: Stop lighttpd so it doesn't conflict with drone server
+ExecStartPre=-/bin/systemctl stop lighttpd
+
+# Step 1: Load morse driver modules
 ExecStartPre=/sbin/modprobe cfg80211
 ExecStartPre=/sbin/modprobe mac80211
 ExecStartPre=/sbin/modprobe crc7
@@ -26,15 +29,15 @@ ExecStartPre=/sbin/insmod /home/pi/morse_driver/morse.ko
 # Step 1: Make sure WiFi radio is unblocked
 ExecStartPre=/usr/sbin/rfkill unblock wifi
 
-# Step 1: Patch the BAT_IP in sdmah-mesh.sh and run it
+# Step 2: Patch the BAT_IP in sdmah-mesh.sh and run it
 ExecStartPre=/bin/bash -c 'sed -i "s|^BAT_IP=.*|BAT_IP=\"${RX_BAT_IP}\"|" ${MESH_SCRIPT}'
 ExecStartPre=/bin/bash ${MESH_SCRIPT}
 
-# Step 2: Small settle delay for the mesh to form
+# Step 4: Small settle delay for the mesh to form
 ExecStartPre=/bin/sleep 5
 
-# Step 3: Run the receiver control daemon
-ExecStart=/usr/bin/python3 ${RX_SCRIPT} ${BIND_IP} ${CTRL_PORT} ${IPERF_PORT}
+# Step 6: Run the receiver control daemon + drone server
+ExecStart=/bin/bash -c 'java -jar /home/pi/drone-public/deployment/DroneServer-1.0.jar & python3 ${RX_SCRIPT} ${BIND_IP} ${CTRL_PORT} ${IPERF_PORT}'
 
 Restart=on-failure
 RestartSec=5
