@@ -111,13 +111,15 @@ else
 fi
 
 # -----------------------------------------------------------
-# 6. Install systemd service
+# 6. Install systemd services
 # -----------------------------------------------------------
 echo ""
-echo "[6/6] Installing systemd service..."
+echo "[6/6] Installing systemd services..."
 cp "$SCRIPT_DIR/mcs-matrix-rx.service" /etc/systemd/system/
+cp "$SCRIPT_DIR/drone-server.service" /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable mcs-matrix-rx.service
+systemctl enable drone-server.service
 
 echo ""
 echo "============================================"
@@ -127,6 +129,7 @@ echo ""
 echo " Driver:  built and loaded"
 echo " Files:   ${INSTALL_DIR}"
 echo " Service: mcs-matrix-rx.service (enabled)"
+echo " Service: drone-server.service (enabled)"
 echo " AP:      wlan1 → SSID: uas6, IP: ${WLAN1_IP}"
 echo " Drone:   otherDronesUrls → ${OTHER_DRONE_URL}"
 echo " JDK:     $(java -version 2>&1 | head -1)"
@@ -135,9 +138,11 @@ echo " To edit config (IPs, ports):"
 echo "   sudo nano /etc/systemd/system/mcs-matrix-rx.service"
 echo "   sudo systemctl daemon-reload"
 echo ""
-echo " Starting service now..."
+echo " Starting services now..."
 systemctl start mcs-matrix-rx
+systemctl start drone-server
 echo ""
 echo " To watch logs:"
 echo "   journalctl -u mcs-matrix-rx -f"
+echo "   journalctl -u drone-server -f"
 echo ""
